@@ -20,14 +20,11 @@ import {
   onStop,
   perpMarkets,
   placePerp,
-  positionIn,
-  preflight,
   requireMarket,
   shutdown,
   sizeForNotional,
   sizeOrder,
   sleep,
-  tradingKeyCheck,
   type PerpMarket,
   type Side,
 } from "@dreamdex-bot-kit/perp-core";
@@ -66,7 +63,7 @@ async function scanFundingOpportunities(
       const book = await ctx.exchange.fetchOrderBook(m.symbol, 1);
       const bestBid = book.bids[0]?.[0];
       const bestAsk = book.asks[0]?.[0];
-      const spreadBps = bestBid && bestAsk && mark > 0
+      const spreadBps = bestBid !== undefined && bestAsk !== undefined && mark > 0
         ? Math.round(((bestAsk - bestBid) / mark) * 10_000)
         : 0;
 
@@ -108,13 +105,14 @@ async function main(): Promise<void> {
   console.log("================================================================================\n");
 
   const markets = await perpMarkets(ctx.exchange, true);
-  if (markets.length === 0) {
+  const firstMarket = markets[0];
+  if (!firstMarket) {
     throw new Error("No live perp markets found on current network");
   }
 
   // Preflight operator link coverage
   if (ctx.tradingKey) {
-    const { linked, missing } = await linkCoverage(ctx, markets);
+    const { linked } = await linkCoverage(ctx, markets);
     if (linked.length === 0) {
       throw new Error(`Trading key is not linked to account ${me} on any perp market`);
     }
@@ -126,11 +124,11 @@ async function main(): Promise<void> {
   let cycle = 0;
   while (!stopped()) {
     cycle++;
-    const timestamp = new Date().toISOString().split("T")[1].slice(0, 8);
+    const timestamp = new Date().toISOString().split("T")[1]?.slice(0, 8) ?? "00:00:00";
     console.log(`--- [Cycle #${cycle} | ${timestamp} UTC] Checking Margin & Risk State ---`);
 
     // 1. Margin and Health Analysis
-    const snap = await marginSnapshot(ctx.exchange, markets[0], me);
+    const snap = await marginSnapshot(ctx.exchange, firstMarket, me);
     const health = healthRatio(snap);
     const unlocked = Number(formatUnits(snap.unlocked, 18)).toFixed(2);
     const equity = Number(formatUnits(snap.equity, 18)).toFixed(2);
@@ -165,8 +163,8 @@ async function main(): Promise<void> {
       console.warn(`⚠️ [WARNING] Account health ${health.toFixed(2)}x below safety limit (${MIN_HEALTH}x).`);
       console.warn("⚠️ [ACTION] De-risking: Trimming exposure by 50%...");
 
-      if (positions.length > 0) {
-        const highestRisk = positions[0];
+      const highestRisk = positions[0];
+      if (highestRisk) {
         const targetMarket = markets.find((m) => m.symbol === highestRisk.symbol);
         if (targetMarket) {
           await closePosition(ctx, targetMarket, me, { fraction: 0.5, label: "dreamguard-risk-trim" });
@@ -180,9 +178,9 @@ async function main(): Promise<void> {
     if (HARVEST_ENABLED && (!isFiniteHealth || health >= MIN_HEALTH)) {
       console.log("[Harvester] Scanning 21 markets for extreme funding rate yields...");
       const opps = await scanFundingOpportunities(ctx, markets);
+      const top = opps[0];
 
-      if (opps.length > 0) {
-        const top = opps[0];
+      if (top) {
         console.log(`[Top Yield] ${top.market.display} APR: ${(top.apr * 100).toFixed(2)}% | Earns: ${top.side.toUpperCase()} | Spread: ${top.spreadBps} bps`);
 
         // Check if top yield exceeds entry threshold

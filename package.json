@@ -22,6 +22,7 @@
     "test": "npm run test -w @dreamdex-bot-kit/backtest && npm run test -w @dreamdex-bot-kit/ec-core && npm run test -w @dreamdex-bot-kit/perp-core",
     "ec:doctor": "npx tsx scripts/ec-doctor.ts",
     "perp:doctor": "npx tsx scripts/perp-doctor.ts",
+    "dreamguard:doctor": "npx tsx scripts/perp-doctor.ts",
     "dreamguard:sentinel": "npx tsx strategies/dreamguard-sentinel/src/index.ts",
     "dreamguard:status": "npx tsx scripts/dreamguard-status.ts",
     "dreamguard:test-order": "npx tsx scripts/test-order.ts",
