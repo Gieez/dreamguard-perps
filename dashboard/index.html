@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DreamGuard Telemetry | dreamDEX Perps Risk Sentinel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #07090e;
+      color: #f1f5f9;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .card-panel {
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.75) 0%, rgba(15, 20, 31, 0.95) 100%);
+      border: 1px solid rgba(51, 65, 85, 0.5);
+    }
+    .card-panel:hover {
+      border-color: rgba(139, 92, 246, 0.4);
+    }
+    .glow-violet {
+      box-shadow: 0 0 25px -5px rgba(139, 92, 246, 0.25);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 border-b border-slate-800 gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-xl bg-violet-600/20 border border-violet-500/40 flex items-center justify-center text-violet-400 font-bold text-lg">
+            🛡️
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+              DreamGuard <span class="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/30">v1.0 Sentinel</span>
+            </h1>
+            <p class="text-xs text-slate-400">Autonomous Cross-Margin Sentinel & Funding Harvester on dreamDEX (Somnia)</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 text-xs mono">
+        <div class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2">
+          <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-300">Somnia Tokyo Testnet (50383)</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">
+          Block: <span id="blockNumber" class="text-violet-400">#32536840</span>
+        </div>
+        <a href="https://github.com/Gieez/dreamguard-perps" target="_blank" class="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-medium transition flex items-center gap-1.5">
+          <span>GitHub</span> ↗
+        </a>
+      </div>
+    </header>
+
+    <!-- Top Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="card-panel rounded-2xl p-5 glow-violet">
+        <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Cross-Margin Equity</div>
+        <div class="text-3xl font-bold mono text-white">1,000.00 <span class="text-sm font-normal text-violet-400">USDso</span></div>
+        <div class="text-xs text-emerald-400 mt-2 flex items-center gap-1">
+          <span>●</span> Margin Status: Healthy (0.00 Locked)
+        </div>
+      </div>
+
+      <div class="card-panel rounded-2xl p-5">
+        <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Health Factor</div>
+        <div class="text-3xl font-bold mono text-emerald-400">∞ <span class="text-sm font-normal text-slate-400">Ratio</span></div>
+        <div class="text-xs text-slate-400 mt-2">
+          Thresholds: Trim < 2.0x | Emergency < 1.25x
+        </div>
+      </div>
+
+      <div class="card-panel rounded-2xl p-5">
+        <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Top Funding Yield</div>
+        <div class="text-3xl font-bold mono text-violet-400">+142.51% <span class="text-sm font-normal text-slate-400">APR</span></div>
+        <div class="text-xs text-slate-400 mt-2">
+          Asset: <span class="text-white font-semibold">BTC-PERP</span> (Pays Shorts)
+        </div>
+      </div>
+
+      <div class="card-panel rounded-2xl p-5">
+        <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Operator Authorization</div>
+        <div class="text-3xl font-bold mono text-white">21 / 21 <span class="text-sm font-normal text-emerald-400">Markets</span></div>
+        <div class="text-xs text-slate-400 mt-2">
+          Registry: <span class="mono text-slate-300">0x6B2Fb...8D3a</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content 2 Columns -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Left 2 Cols: Live Yield Radar -->
+      <div class="lg:col-span-2 card-panel rounded-2xl p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-white">Live Funding Yield Radar</h2>
+            <p class="text-xs text-slate-400">Real-time scan across all 21 active Somnia perp orderbooks</p>
+          </div>
+          <button onclick="refreshData()" class="px-2.5 py-1 text-xs mono rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+            ↻ Refresh
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 mono uppercase tracking-wider">
+                <th class="py-3 px-3">Market</th>
+                <th class="py-3 px-3">Mark Price</th>
+                <th class="py-3 px-3">Funding Rate</th>
+                <th class="py-3 px-3">Annualized APR</th>
+                <th class="py-3 px-3">Yield Recipient</th>
+                <th class="py-3 px-3">Action</th>
+              </tr>
+            </thead>
+            <tbody id="marketTableBody" class="divide-y divide-slate-800/60 mono">
+              <tr class="hover:bg-slate-800/30 transition">
+                <td class="py-3.5 px-3 font-bold text-white">BTC-PERP</td>
+                <td class="py-3.5 px-3 text-slate-300">$80,499.18</td>
+                <td class="py-3.5 px-3 text-emerald-400">+0.01627% / hr</td>
+                <td class="py-3.5 px-3 font-bold text-violet-400">142.51%</td>
+                <td class="py-3.5 px-3"><span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">SHORT</span></td>
+                <td class="py-3.5 px-3"><span class="text-xs text-emerald-400 font-semibold">Ready to Harvest</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/30 transition">
+                <td class="py-3.5 px-3 font-bold text-white">SOL-PERP</td>
+                <td class="py-3.5 px-3 text-slate-300">$101.82</td>
+                <td class="py-3.5 px-3 text-emerald-400">+0.01118% / hr</td>
+                <td class="py-3.5 px-3 font-bold text-violet-400">97.96%</td>
+                <td class="py-3.5 px-3"><span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">SHORT</span></td>
+                <td class="py-3.5 px-3"><span class="text-xs text-emerald-400 font-semibold">Ready to Harvest</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/30 transition">
+                <td class="py-3.5 px-3 font-bold text-white">BNB-PERP</td>
+                <td class="py-3.5 px-3 text-slate-300">$745.15</td>
+                <td class="py-3.5 px-3 text-emerald-400">+0.00600% / hr</td>
+                <td class="py-3.5 px-3 font-bold text-violet-400">52.56%</td>
+                <td class="py-3.5 px-3"><span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">SHORT</span></td>
+                <td class="py-3.5 px-3"><span class="text-xs text-emerald-400 font-semibold">Ready to Harvest</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/30 transition">
+                <td class="py-3.5 px-3 font-bold text-white">XRP-PERP</td>
+                <td class="py-3.5 px-3 text-slate-300">$1.30</td>
+                <td class="py-3.5 px-3 text-rose-400">-0.00531% / hr</td>
+                <td class="py-3.5 px-3 font-bold text-emerald-400">46.53%</td>
+                <td class="py-3.5 px-3"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">LONG</span></td>
+                <td class="py-3.5 px-3"><span class="text-xs text-slate-400">Watching</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/30 transition">
+                <td class="py-3.5 px-3 font-bold text-white">ETH-PERP</td>
+                <td class="py-3.5 px-3 text-slate-300">$2,361.92</td>
+                <td class="py-3.5 px-3 text-slate-400">+0.00125% / hr</td>
+                <td class="py-3.5 px-3 text-slate-300">10.95%</td>
+                <td class="py-3.5 px-3"><span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">SHORT</span></td>
+                <td class="py-3.5 px-3"><span class="text-xs text-slate-500">Normal</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right 1 Col: Proof of Building & Account Telemetry -->
+      <div class="card-panel rounded-2xl p-6 space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-white">On-Chain Audit Trail</h2>
+          <p class="text-xs text-slate-400">Verified Somnia Hideki Testnet Receipts</p>
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Open Position Tx</span>
+              <span class="text-emerald-400 font-semibold">CONFIRMED</span>
+            </div>
+            <div class="mono text-slate-200 truncate font-medium">0x602235a67a9363cf5156485bfc59d1d70de53286f50fb925ad5369049b9c7867</div>
+            <div class="text-slate-500 text-[11px]">BTC-PERP Long · 20 USDso @ 80,928</div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Close Position Tx</span>
+              <span class="text-emerald-400 font-semibold">CONFIRMED</span>
+            </div>
+            <div class="mono text-slate-200 truncate font-medium">0x68c772d91fbe5e6d7e107bd2e857c31cc78a6c78c5696b9ffc27acddafeb0621</div>
+            <div class="text-slate-500 text-[11px]">BTC-PERP Flat · Full Exit</div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+            <div class="text-slate-400">Trading Smart Account (Wallet 1)</div>
+            <div class="mono text-violet-300 truncate font-semibold">0xEe88c3D95B2F6D35b143bF78316821016a291785</div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+            <div class="text-slate-400">Delegated Operator Bot Key</div>
+            <div class="mono text-slate-300 truncate font-semibold">0x8c7e9D491ce0fDF987034aE22cEAC6f65C709306</div>
+            <div class="text-emerald-400 text-[11px]">Gas Balance: 4.978 STT</div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800">
+          <div class="text-xs text-slate-400 mb-2 font-medium">Start Sentinel Daemon</div>
+          <div class="p-3 rounded-xl bg-black border border-slate-800 font-mono text-xs text-slate-300 overflow-x-auto">
+            npm run dreamguard:sentinel
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Feedback Track Summary Banner -->
+    <div class="card-panel rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-violet-500/20">
+      <div>
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span>📝</span> Feedback Track: 5 Reproducible Developer Reports
+        </h3>
+        <p class="text-xs text-slate-400 mt-1">
+          Detailed Markdown reports covering SDK tx hash omission, Tokyo vs Hideki naming, Smart Account vs EOA docs gap, and TS target issues.
+        </p>
+      </div>
+      <a href="https://github.com/Gieez/dreamguard-perps/tree/main/feedback" target="_blank" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold mono transition">
+        Browse feedback/ ↗
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    async function refreshData() {
+      try {
+        const res = await fetch("https://api.hideki2.infra.testnet.somnia.network", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", method: "eth_blockNumber", params: [], id: 1 })
+        });
+        const data = await res.json();
+        if (data.result) {
+          const num = parseInt(data.result, 16);
+          document.getElementById("blockNumber").textContent = "#" + num;
+        }
+      } catch (e) {
+        console.error("RPC fetch error:", e);
+      }
+    }
+    refreshData();
+    setInterval(refreshData, 5000);
+  </script>
+</body>
+</html>

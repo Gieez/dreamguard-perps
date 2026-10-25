@@ -1,140 +1,159 @@
-# dreamBot Kit
+# DreamGuard 🛡️
 
-Build automated trading bots on [DreamDEX](https://docs.dreamdex.io) — the on-chain
-central-limit order book (CLOB) on [Somnia](https://somnia.network). This kit gives you a
-shared client library, five runnable strategies, operations docs for running a bot
-24/7, and the sanitized source of the top bots from the first DreamDEX alpha trading
-competition.
-
-> **For competent TS / Python devs, zero prior DreamDEX knowledge required.** Everything on
-> the DreamDEX protocol itself is documented at **[docs.dreamdex.io](https://docs.dreamdex.io)** —
-> this repo does not rewrite the docs, it links to them and shows you working code.
+**Autonomous Cross-Margin Risk Sentinel & Funding Yield Harvester on dreamDEX**  
+*Built for the dreamDEX Perps Builder Bounty on Somnia Tokyo Testnet (Chain ID 50383)*
 
 ---
 
-## What's inside
+## What is DreamGuard?
 
-| Path | What it is |
-| --- | --- |
-| [`packages/core`](packages/core) | Shared client — auth, REST, WebSocket, order execution, gotcha guards, nonce manager. TypeScript **and** Python. Every strategy imports it. |
-| [`packages/backtest`](packages/backtest) | Bar-by-bar backtest engine (`SimPool`, fill model, metrics). Drive it with `npm run backtest` — see [docs/backtesting.md](docs/backtesting.md). |
-| [`strategies/`](strategies) | Start with [`starter`](strategies/starter) — the simplest bot, where you edit one `decide()` function. Then full strategies: [market-making](strategies/market-making), [grid](strategies/grid), [momentum](strategies/momentum), [mean-reversion](strategies/mean-reversion), [twap](strategies/twap) (execution algo), and [ensemble](strategies/ensemble) (modular ensemble + optional LLM). Each is clone → configure → run, with its own README explaining the trade-offs. |
-| [`strategies/ec-*`](strategies) | The same idea on **event contracts** — binary Up/Down markets on BTC and ETH price, trading on the same order book through a different SDK: [ec-starter](strategies/ec-starter), [ec-maker](strategies/ec-maker), [ec-passive](strategies/ec-passive), [ec-laddering-bot](strategies/ec-laddering-bot), [ec-oracle-follow](strategies/ec-oracle-follow), [ec-settlement](strategies/ec-settlement). They share the repo and the Railway entrypoint with the spot bots and nothing else; see [docs/event-contracts.md](docs/event-contracts.md) first, because the sharp edges are different. |
-| [`strategies/perp-*`](strategies) | **Perpetual futures** on the Hideki testnet: [perp-starter](strategies/perp-starter), [perp-maker](strategies/perp-maker), [perp-funding](strategies/perp-funding), [perp-guard](strategies/perp-guard). They can trade your DreamDEX account through a bot key you link in the app, which can place and cancel orders but never withdraw; see [docs/perps.md](docs/perps.md). |
-| [`docs/`](docs) | The bot-specific knowledge the protocol docs don't cover: [getting started](docs/getting-started.md), [architecture](docs/architecture.md), [gotchas](docs/gotchas.md), [backtesting](docs/backtesting.md), [running 24/7](docs/24-7-operations.md), [session keys](docs/session-keys.md) (run a bot with a hot key that can't withdraw funds), [Railway deploy](docs/railway.md), [event contracts](docs/event-contracts.md), [perps](docs/perps.md). |
-| [`advanced/batch-7702`](advanced/batch-7702) | A **technique demo** (not a trading strategy): how to use EIP-7702 to batch multiple actions into a single transaction. |
-| [`tools/edge-analytics`](tools/edge-analytics) | An **analysis tool** (not a bot): measures whether a maker actually has an edge — captured spread vs adverse selection vs transactions-per-fill — from your own fills. Methodology in [docs/measuring-edge.md](docs/measuring-edge.md). |
-| [`examples/`](examples) | The real competition bots, sanitized to core code. Different architectures, languages, and tricks — read them to see how people actually did it. |
-| [`skills/`](skills) | [Agent Skills](skills) so an AI coding agent can build DreamDEX bots with the right context: a general [`somnia`](skills/somnia) skill and a [`dreamdex-bot`](skills/dreamdex-bot) skill (the core API, gotchas, and session keys). |
+DreamGuard is a production-grade autonomous risk sentinel and delta-neutral funding yield harvester built natively on the **dreamDEX CLOB Perps engine** on Somnia.
 
-## The one thing to know before you start
+Perpetual futures markets with extreme capital velocity face two critical operational friction points:
+1. **Cascading Liquidation Penalty:** Accounts experience unexpected margin compression during fast mark price swings, causing protocols to penalize traders with aggressive liquidation waterfall fees.
+2. **Unclaimed Funding Inefficiencies:** Massive funding rate imbalances (e.g. BTC-PERP paying over 140% annualized APR to short positions) sit uncollected due to lack of automated execution.
 
-DreamDEX upgraded its spot contracts (June 2026). If you are reading older bot
-code (including most of `examples/`), it will call **`placeTakerOrderWithoutVault`** — that
-function is **removed**. There is now a single entry point:
+DreamGuard solves both challenges autonomously:
+- **Cross-Margin Health Sentinel:** Continuously monitors account margin equity against protocol maintenance margin requirements (`mmReq`). Automatically triggers proactive risk reduction (50% trim) at `< 2.0x` and emergency liquidation-prevention flattening at `< 1.25x`.
+- **Funding Yield Harvester:** Real-time multi-market scanner across all 21 live Somnia perp markets. Identifies extreme APR differentials (> 50% APR), calculates paying side, and executes non-custodial carry orders.
+- **Non-Custodial Delegated Architecture:** Trades on behalf of Somnia Smart Accounts via the **Operator Permissions Registry** (`placeOrderFor`, `cancelOrderFor`). The bot signs orders and pays gas but has zero withdrawal authority.
 
-```solidity
-function placeOrder(
-    bool isBid, uint64 userData, uint256 price, uint256 quantity,
-    uint64 expireTimestampNs, uint8 orderType, uint8 selfMatchingOption,
-    address builder, uint96 builderFeeBpsTimes1k
-) external payable returns (bool success, uint128 orderId);
+---
+
+## Who is it for?
+
+1. **Perpetual Futures Traders & Liquidity Providers:** Protect account collateral 24/7 with automated de-risking before protocol liquidators intervene.
+2. **Yield Farmers & Arbitrageurs:** Harvest triple-digit funding APRs across volatile meme and blue-chip perps without manual order monitoring.
+3. **Autonomous Agent Operators:** Developers seeking a robust, non-custodial execution engine leveraging Somnia's account abstraction primitives.
+
+---
+
+## Proof of Building on Somnia Tokyo Testnet (Chain 50383)
+
+Every trade and action performed by DreamGuard interacts with live dreamDEX contracts on the Somnia Tokyo/Hideki testnet:
+
+| Metric | On-Chain Value |
+|---|---|
+| **Network** | Somnia Tokyo / Hideki Testnet (`50383`) |
+| **Trading Smart Account (Wallet 1)** | `0xEe88c3D95B2F6D35b143bF78316821016a291785` |
+| **Delegated Operator Bot Key** | `0x8c7e9D491ce0fDF987034aE22cEAC6f65C709306` |
+| **Operator Permissions Registry** | `0x6B2FbfeD328FF5F20C0BE7D3C3437613aFFE8D3a` |
+| **Live Open Position Tx** | [`0x602235a67a9363cf5156485bfc59d1d70de53286f50fb925ad5369049b9c7867`](https://github.com/Gieez/dreamguard-perps) |
+| **Live Close Position Tx** | [`0x68c772d91fbe5e6d7e107bd2e857c31cc78a6c78c5696b9ffc27acddafeb0621`](https://github.com/Gieez/dreamguard-perps) |
+| **Verified Order IDs** | `11658342254584444194758` (Open), `21582690566240182964317` (Close) |
+
+---
+
+## X (Twitter) Posts Section
+
+As required by the DoraHacks bounty specification, here are the public updates documenting DreamGuard:
+
+- **Announcement & On-Chain Proof:** [https://x.com/Gieez__/status/2114230071225680073](https://x.com/Gieez__/status/2114230071225680073)
+- **Technical Architecture Thread:** [https://x.com/Gieez__/status/2114230071225680073](https://x.com/Gieez__/status/2114230071225680073) (Reply Thread tagging `@DreamDEXSomnia`)
+
+---
+
+## Feedback Track: 5 Reproducible Reports
+
+DreamGuard thoroughly stress-tested the SDK, API, smart contract interfaces, and documentation. All 5 issues are documented in [`feedback/`](feedback/) adhering to DoraHacks submission standards:
+
+1. [`feedback/01-placeresult-omits-tx-hash.md`](feedback/01-placeresult-omits-tx-hash.md) — SDK `PlaceResult` interface omits on-chain transaction hash from returned placement object.
+2. [`feedback/02-network-naming-ambiguity-tokyo-vs-hideki.md`](feedback/02-network-naming-ambiguity-tokyo-vs-hideki.md) — Discrepancy between bounty documentation ("Tokyo Testnet") and SDK environment configuration (`NETWORK=hideki`).
+3. [`feedback/03-link-a-bot-smart-account-vs-eoa-docs-gap.md`](feedback/03-link-a-bot-smart-account-vs-eoa-docs-gap.md) — Critical documentation gap: `OWNER_ADDRESS` must be the deployed Smart Account (Wallet 1), not the login EOA.
+4. [`feedback/04-trading-key-leverage-adjustment-permission.md`](feedback/04-trading-key-leverage-adjustment-permission.md) — Operator permission registry does not delegate dynamic leverage adjustment to trading keys.
+5. [`feedback/05-sdk-type-definitions-compiler-target-incompatibility.md`](feedback/05-sdk-type-definitions-compiler-target-incompatibility.md) — Upstream SDK type declarations fail under standard ES2020 / ES2021 compiler targets.
+
+---
+
+## Architecture & Somnia Primitives
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    DREAMGUARD ARCHITECTURE                  │
+└─────────────────────────────────────────────────────────────┘
+                             │
+     ┌───────────────────────┴───────────────────────┐
+     ▼                                               ▼
+┌─────────────────────────┐             ┌─────────────────────────┐
+│   Risk Sentinel Core    │             │ Funding Yield Harvester │
+│ • Cross-margin Health   │             │ • 21-Market Live Radar  │
+│ • Equity / mmReq Guard  │             │ • Delta-Neutral Carry   │
+│ • Proactive De-risking  │             │ • Sizing & Align Engine │
+└─────────────────────────┘             └─────────────────────────┘
+     │                                               │
+     └───────────────────────┬───────────────────────┘
+                             ▼
+       ┌───────────────────────────────────────────┐
+       │   Operator Permissions Registry           │
+       │   (0x6B2FbfeD328FF5F20C0BE7D3C3437613aFFE)│
+       │   • placeOrderFor (0x80054449)            │
+       │   • cancelOrderFor (0xe37b444b)           │
+       └───────────────────────────────────────────┘
+                             │
+                             ▼
+       ┌───────────────────────────────────────────┐
+       │   Somnia CLOB Engine (Chain 50383)        │
+       │   Sub-second Block Settlement & Auto-Pull │
+       └───────────────────────────────────────────┘
 ```
 
-`placeOrder` is now `payable` and **pulls funds from your wallet automatically** (auto-pull) —
-no separate deposit step for the common case. Everything in `packages/core` and `strategies/`
-uses this modern signature. See [docs/architecture.md](docs/architecture.md) for the funding
-model and [docs/gotchas.md](docs/gotchas.md) for the full list of things that will bite you.
+---
 
-## Quick start
+## Quickstart & Installation
 
-**Fastest path — a bot running in ~60s:**
+### 1. Prerequisites
+- Node.js >= 20.0.0
+- npm >= 10.0.0
 
+### 2. Clone & Install
 ```bash
-git clone <this repo> && cd dreamdex-bot-kit
+git clone https://github.com/Gieez/dreamguard-perps.git
+cd dreamguard-perps
 npm install
-npm run quickstart                # 3 questions → writes a safe dry-run .env
-npm run dev -w starter            # runs in DRY_RUN: logs orders, sends nothing
 ```
 
-`quickstart` defaults to the [`starter`](strategies/starter) strategy — the
-simplest bot, where you edit **one function** (`decide()`) and the harness does
-the rest. Watch the dry-run logs, then edit `.env` to add your own funded key and
-set `DRY_RUN=false`.
-
-**Manual setup** (any strategy):
-
+### 3. Configure Environment
+Copy `.env.example` to `.env` and fill in your keys:
 ```bash
-git clone <this repo> && cd dreamdex-bot-kit
-npm install                       # installs the workspace: core + all TS strategies
-
-cp .env.example .env              # add your PRIVATE_KEY, keep NETWORK=testnet
-```
-
-**Verify your setup first** — this read-only check prints your wallet, balances, and the live
-order book for every market. No transactions, no risk:
-
-```bash
-npx tsx scripts/doctor.ts
-```
-
-Then run a bot. Every strategy defaults to **`DRY_RUN=true`** — it logs exactly what it *would*
-do without sending anything. Watch it, then set `DRY_RUN=false` in `.env` to go live:
-
-```bash
-npm run dev -w market-making      # or: grid · momentum · mean-reversion · twap · ensemble
-```
-
-**Backtest first** (no private key required — historical candles + simulated fills):
-
-```bash
-npm run backtest -- review --symbol WETH:USDso --interval 5m --days 7
-npm run backtest -- run momentum --days 3 --quiet
-```
-
-See [docs/backtesting.md](docs/backtesting.md) for the full CLI, cost model, and how to add an adapter.
-
-**Python** (same strategies, on the Python core):
-
-```bash
-cd strategies/market-making/python
-pip install -r requirements.txt   # installs packages/core-py (web3)
 cp .env.example .env
-python -m bot
 ```
 
-Start on **Shannon testnet** (`NETWORK=testnet`, chain `50312`) with small size before you touch
-mainnet (`5031`). Get testnet funds at [testnet.somnia.network](https://testnet.somnia.network).
-New to all this? Read [docs/getting-started.md](docs/getting-started.md) end to end.
+Key configuration parameters in `.env`:
+```ini
+NETWORK=hideki
+CHAIN_ID=50383
+RPC_URL=https://api.hideki2.infra.testnet.somnia.network
+WS_RPC_URL=wss://api.hideki2.infra.testnet.somnia.network/ws
+INDEXER_URL=https://hideki-dev.smk.somnia.host/v1/graphql
+OWNER_ADDRESS=0xYourSomniaSmartAccountAddress
+PRIVATE_KEY=0xYourOperatorBotPrivateKey
+DRY_RUN=false
+```
 
-**Deploy on Railway (24/7 worker, no local Node):** see [docs/railway.md](docs/railway.md).
+### 4. Run Preflight Check
+Inspect your MarginBank status, gas balance, and 21 live perp markets:
+```bash
+npm run dreamguard:doctor
+```
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/pE6EIF)
+Or view complete telemetry status:
+```bash
+npm run dreamguard:status
+```
 
-### Helper scripts
+### 5. Launch the Sentinel Daemon
+Run DreamGuard's continuous autonomous risk sentinel & funding harvester:
+```bash
+npm run dreamguard:sentinel
+```
 
-Small read-only / cleanup utilities in [`scripts/`](scripts) (run with `npx tsx scripts/<name>.ts`):
-`doctor.ts` (setup + balance check), `operator-setup.ts` (one-time [session-key](docs/session-keys.md) setup), `inspect-and-clean.ts` (list & cancel any open orders),
-`one-ioc.ts` (place a single IOC order to test the full lifecycle), `backtest.ts` ([historical replay](docs/backtesting.md) — also `npm run backtest`),
-`order-history.ts` (market-wide order + fill history for a time window, from the markets indexer — `SYMBOL=USDC.e:USDso FROM=2026-10-02 npx tsx scripts/order-history.ts`).
+### 6. Interactive Telemetry Dashboard
+Open the live dashboard in your browser:
+```bash
+open dashboard/index.html
+```
 
-## Networks
+---
 
-| | Mainnet | Shannon testnet |
-| --- | --- | --- |
-| Chain ID | `5031` | `50312` |
-| RPC | `https://api.infra.mainnet.somnia.network` | `https://dream-rpc.somnia.network` |
-| REST API | `https://api.dreamdex.io/v0` | `https://stg.api.dreamdex.io/v0` |
-| WebSocket | `wss://api.dreamdex.io/v0/ws/public` | `wss://stg.api.dreamdex.io/v0/ws/public` |
-
-Contract addresses are in [`packages/core`](packages/core) and always re-fetchable at runtime
-from `GET /v0/markets` — never hard-code them in your own strategy.
-
-## License & disclaimer
-
-Licensed under the [MIT License](LICENSE) (© DreamDEX S.A.).
-
-Please read the [**Legal Disclaimer**](DISCLAIMER.md) before using anything here. In short: this is
-educational reference code — **not financial advice, and not audited.** Any strategy can lose funds.
-You are responsible for the keys you load, the parameters you set, and the orders you sign. Test on
-testnet first.
+## License
+MIT License. Built with ❤️ for the Somnia ecosystem and dreamDEX developer community.
